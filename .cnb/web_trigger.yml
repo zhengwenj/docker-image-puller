@@ -1,0 +1,13 @@
+# CNB 手动触发按钮:显示在「代码 → 分支详情页」,点击后触发 .cnb.yml 中对应的 web_trigger 事件
+branch:
+  - reg: ^main$
+    buttons:
+      - name: 同步 GitHub Release
+        event: web_trigger_sync_github_release
+        description: 从 GitHub Release 下载产物,创建 CNB Release 并挂上附件
+        inputs:
+          version:
+            name: 版本号(不含 v 前缀)
+            type: input
+            required: true
+            default: 1.0.0

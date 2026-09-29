@@ -1,0 +1,27 @@
+# CNB 流水线配置
+# 手动触发(web_trigger):从 GitHub Release 下载产物 → 创建 CNB Release → 上传附件
+# 在 CNB 网页「代码 → 分支详情页」点击按钮触发,版本号在弹框中填写
+main:
+  web_trigger_sync_github_release:
+    - stages:
+        - name: 下载 GitHub Release 产物
+          image: curlimages/curl:latest
+          script:
+            - mkdir -p assets
+            - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.msi" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.msi"
+            - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.exe" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.exe"
+            - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-portable.exe" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-portable.exe"
+
+        - name: 创建 CNB Release
+          type: git:release
+          options:
+            tag: v${VERSION}
+            title: Docker Image Puller v${VERSION}
+            description: 同步自 GitHub Release,详见 https://github.com/zhengwenj/docker-image-puller/releases/tag/v${VERSION}
+
+        - name: 上传 Release 附件
+          image: cnbcool/attachments:latest
+          settings:
+            tag: v${VERSION}
+            attachments:
+              - assets/*
