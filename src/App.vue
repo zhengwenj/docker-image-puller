@@ -11,7 +11,6 @@ import { ensureConfigLoaded } from "./state/config";
 import { theme, toggleTheme } from "./state/theme";
 
 const REPO_URL = "https://github.com/zhengwenj/docker-image-puller";
-const REPO_PATH = "zhengwenj/docker-image-puller";
 
 const activeTab = ref("search");
 const appVersion = ref("1.0.0");
@@ -111,7 +110,7 @@ onMounted(() => {
             @click.prevent="openRepo"
           >
             <el-icon :size="11" class="shrink-0"><Link /></el-icon>
-            <span class="truncate">{{ REPO_PATH }}</span>
+            <span>GitHub 地址</span>
           </a>
         </div>
       </div>
