@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { getVersion } from "@tauri-apps/api/app";
-import { Box, Download, Moon, QuestionFilled, Search, Setting, Sunny } from "@element-plus/icons-vue";
+import { Box, Download, Link, Moon, QuestionFilled, Search, Setting, Sunny } from "@element-plus/icons-vue";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import SearchPullView from "./components/SearchPullView.vue";
 import DirectPullView from "./components/DirectPullView.vue";
 import SettingsView from "./components/SettingsView.vue";
@@ -9,8 +10,15 @@ import HelpView from "./components/HelpView.vue";
 import { ensureConfigLoaded } from "./state/config";
 import { theme, toggleTheme } from "./state/theme";
 
+const REPO_URL = "https://github.com/zhengwenj/docker-image-puller";
+const REPO_PATH = "zhengwenj/docker-image-puller";
+
 const activeTab = ref("search");
 const appVersion = ref("1.0.0");
+
+function openRepo() {
+  openUrl(REPO_URL).catch(() => window.open(REPO_URL, "_blank"));
+}
 
 const pages = [
   {
@@ -96,6 +104,15 @@ onMounted(() => {
             Registry V2 兼容
           </div>
           <div class="mt-0.5">v{{ appVersion }}</div>
+          <a
+            :href="REPO_URL"
+            class="mt-1 flex w-full min-w-0 cursor-pointer items-center gap-1.5 text-left text-[11px] leading-5 text-brand underline decoration-brand/40 underline-offset-2 transition-colors duration-150 hover:text-brand-deep hover:decoration-brand-deep"
+            :title="REPO_URL"
+            @click.prevent="openRepo"
+          >
+            <el-icon :size="11" class="shrink-0"><Link /></el-icon>
+            <span class="truncate">{{ REPO_PATH }}</span>
+          </a>
         </div>
       </div>
     </aside>
