@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "dist": "tauri build && node scripts/normalize-bundles.cjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
