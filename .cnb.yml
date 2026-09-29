@@ -4,21 +4,22 @@
 main:
   web_trigger_sync_github_release:
     - stages:
-        - name: 下载 GitHub Release 产物
+        - name: 下载 GitHub Release 产物与说明
           image: alpine:3.20
           script:
-            - apk add --no-cache curl
+            - apk add --no-cache curl jq
             - mkdir -p assets
             - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.msi" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.msi"
             - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.exe" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.exe"
             - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-portable.exe" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-portable.exe"
+            - curl -sf "https://api.github.com/repos/zhengwenj/docker-image-puller/releases/tags/v${VERSION}" | jq -r .body > RELEASE_NOTES.md
 
         - name: 创建 CNB Release
           type: git:release
           options:
             tag: v${VERSION}
             title: Docker Image Puller v${VERSION}
-            description: 同步自 GitHub Release,详见 https://github.com/zhengwenj/docker-image-puller/releases/tag/v${VERSION}
+            descriptionFromFile: RELEASE_NOTES.md
 
         - name: 上传 Release 附件
           image: cnbcool/attachments:latest
