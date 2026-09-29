@@ -6,7 +6,7 @@ branch:
         event: web_trigger_sync_github_release
         description: 从 GitHub Release 下载产物,创建 CNB Release 并挂上附件
         inputs:
-          version:
+          VERSION:
             name: 版本号(不含 v 前缀)
             type: input
             required: true
