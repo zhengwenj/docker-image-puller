@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    dockerhub_puller_lib::run()
+    docker_image_puller_lib::run()
 }

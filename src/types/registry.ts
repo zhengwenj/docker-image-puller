@@ -1,7 +1,5 @@
 export type ProxyConfig = {
-  httpProxy?: string;
-  httpsProxy?: string;
-  noProxy?: string;
+  url?: string;
 };
 
 export type RegistryAuth = {
@@ -28,9 +26,7 @@ export type PersistedConfig = {
   defaultTag: string;
   platformOs: string;
   platformArchitecture: string;
-  httpProxy: string;
-  httpsProxy: string;
-  noProxy: string;
+  proxy: string;
   username: string;
   password: string;
 };

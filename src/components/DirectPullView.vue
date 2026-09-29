@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
+import { Box, CircleCheck, Connection, Download } from "@element-plus/icons-vue";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { pullImageAsTar, testRegistryAuth } from "../composables/useRegistryApi";
 import {
@@ -35,6 +36,10 @@ interface ExportResult {
 }
 
 const exportResult = ref<ExportResult | null>(null);
+
+onMounted(() => {
+  if (!form.outputDir && appConfig.outputDir) form.outputDir = appConfig.outputDir;
+});
 
 function openDirectoryPicker() {
   directoryPicker.value?.click();
@@ -123,13 +128,15 @@ async function openExportDirectory() {
 </script>
 
 <template>
-  <section class="page-shell">
-    <el-row :gutter="16">
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="font-semibold">镜像与输出</div>
-          </template>
+  <section class="space-y-5 pb-8">
+    <div class="grid items-start gap-5 lg:grid-cols-5">
+      <!-- 镜像与输出 -->
+      <section class="panel lg:col-span-3">
+        <header class="panel-head">
+          <span class="panel-icon"><el-icon :size="15"><Box /></el-icon></span>
+          <h2 class="panel-title m-0">镜像与输出</h2>
+        </header>
+        <div class="p-5">
           <el-form label-position="top">
             <el-form-item label="Registry 地址">
               <el-input v-model="form.registry" placeholder="docker.io（默认）或私有仓库地址" />
@@ -153,55 +160,71 @@ async function openExportDirectory() {
               <el-checkbox v-model="form.useAuth">携带认证信息（拉取私有仓库镜像时勾选）</el-checkbox>
             </el-form-item>
           </el-form>
-        </el-card>
-      </el-col>
+          <div class="flex justify-end border-t border-edge pt-4">
+            <el-button type="primary" size="large" class="px-8" :loading="pulling" @click="handlePull">
+              开始导出
+            </el-button>
+          </div>
+        </div>
+      </section>
 
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="flex items-center justify-between">
-              <span class="font-semibold">连接校验</span>
-              <el-button size="small" :loading="testing" @click="handleTestAuth">测试连通与鉴权</el-button>
-            </div>
-          </template>
-          <div class="space-y-2 text-sm leading-6 text-zinc-600">
-            <p class="m-0">
-              填写 Registry 与镜像名称后，可先测试连通性和鉴权是否通过，再执行导出。
-              认证与代理参数来自「设置」页。
-            </p>
+      <!-- 连接校验 -->
+      <section class="panel self-stretch lg:col-span-2">
+        <header class="panel-head">
+          <span class="panel-icon"><el-icon :size="15"><Connection /></el-icon></span>
+          <h2 class="panel-title m-0">连接校验</h2>
+        </header>
+        <div class="flex h-[calc(100%-57px)] flex-col p-5">
+          <div class="space-y-2.5 text-[13px] leading-6 text-ink-dim">
+            <p class="m-0">填写 Registry 与镜像名称后，可先测试连通性和鉴权是否通过，再执行导出。认证与代理参数来自「设置」页。</p>
             <p class="m-0">支持任意兼容 Registry V2 协议的仓库：Docker Hub、Harbor、Nexus 等。</p>
-            <el-alert v-if="testMessage" :title="testMessage" type="success" :closable="false" />
           </div>
-          <div class="mt-4 flex justify-end">
-            <el-button type="primary" :loading="pulling" @click="handlePull">开始导出</el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <div class="status-stack">
+          <el-button class="mt-4" :loading="testing" @click="handleTestAuth">测试连通与鉴权</el-button>
+
+          <el-alert
+            v-if="testMessage"
+            class="mt-4"
+            :title="testMessage"
+            type="success"
+            :closable="false"
+          />
+
+          <div class="mt-auto flex items-center gap-2 border-t border-edge pt-4 text-xs text-ink-faint">
+            <el-icon :size="13" color="#22C55E"><CircleCheck /></el-icon>
+            平台：{{ appConfig.platformOs || "linux" }}/{{ appConfig.platformArchitecture || "amd64" }}，可在「设置」中修改
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 状态区 -->
+    <div class="grid gap-2.5">
       <el-alert v-if="progressMessage" :title="progressMessage" type="info" :closable="false" show-icon />
       <el-alert v-if="error" :title="error" type="error" :closable="false" />
 
-      <el-card v-if="exportResult" shadow="never" class="border-blue-200 bg-blue-50/50">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="m-0 text-base font-bold text-zinc-900">导出成功</p>
-            <p class="m-0 mt-0.5 text-xs text-zinc-500">完成时间：{{ exportResult.finishedAt }}</p>
+      <div v-if="exportResult" class="success-panel">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3">
+            <el-icon :size="22" color="#22C55E"><Download /></el-icon>
+            <div>
+              <p class="m-0 text-[15px] font-bold text-ink">导出成功</p>
+              <p class="m-0 mt-0.5 text-xs text-ink-faint">完成时间：{{ exportResult.finishedAt }}</p>
+            </div>
           </div>
-          <el-button @click="openExportDirectory">打开目录</el-button>
+          <el-button type="primary" @click="openExportDirectory">打开目录</el-button>
         </div>
-        <div class="mt-2 grid gap-1">
-          <div>
-            <span class="mr-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">镜像</span>
-            <code>{{ exportResult.imageRef }}</code>
+        <div class="mt-3 grid gap-1.5 rounded-xl bg-abyss/50 px-3.5 py-3 text-xs leading-5">
+          <div class="flex gap-2">
+            <span class="w-10 shrink-0 text-ink-faint">镜像</span>
+            <code class="font-mono text-ink-dim">{{ exportResult.imageRef }}</code>
           </div>
-          <div>
-            <span class="mr-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">文件</span>
-            <code class="break-all">{{ exportResult.tarPath }}</code>
+          <div class="flex gap-2">
+            <span class="w-10 shrink-0 text-ink-faint">文件</span>
+            <code class="break-all font-mono text-ink-dim">{{ exportResult.tarPath }}</code>
           </div>
         </div>
-      </el-card>
+      </div>
     </div>
 
     <input ref="directoryPicker" type="file" class="hidden" webkitdirectory directory @change="onDirectoryPicked" />

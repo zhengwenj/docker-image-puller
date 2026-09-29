@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DockerHub Puller</title>
+    <title>Docker Image Puller</title>
+    <script>
+      // 挂载前恢复已保存的主题,避免刷新时闪错主题(默认亮色)
+      try {
+        if (localStorage.getItem("dhp-theme") === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
   </head>
 
   <body>

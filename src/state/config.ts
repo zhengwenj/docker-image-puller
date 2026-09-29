@@ -7,9 +7,7 @@ export const appConfig = reactive<PersistedConfig>({
   defaultTag: "latest",
   platformOs: "linux",
   platformArchitecture: "amd64",
-  httpProxy: "",
-  httpsProxy: "",
-  noProxy: "",
+  proxy: "",
   username: "",
   password: "",
 });
@@ -27,12 +25,8 @@ export async function ensureConfigLoaded() {
 }
 
 export function proxyConfigOrUndefined() {
-  const proxy = {
-    httpProxy: appConfig.httpProxy.trim(),
-    httpsProxy: appConfig.httpsProxy.trim(),
-    noProxy: appConfig.noProxy.trim(),
-  };
-  return proxy.httpProxy || proxy.httpsProxy || proxy.noProxy ? proxy : undefined;
+  const url = appConfig.proxy.trim();
+  return url ? { url } : undefined;
 }
 
 export function authConfigOrUndefined() {
@@ -56,6 +50,13 @@ export function dirname(path: string) {
 export function formatTime(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+export function formatCount(value: number) {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
 }
 
 export function resolvePickedDirectory(file: File & { path?: string; webkitRelativePath?: string }) {

@@ -3,8 +3,120 @@
 @tailwind utilities;
 
 @layer base {
+  /* ---- 亮色主题令牌(默认) ---- */
   :root {
     color-scheme: light;
+
+    --c-abyss: 243 245 249; /* 页面背景 #F3F5F9 */
+    --c-side: 255 255 255; /* 侧边栏 */
+    --c-panel: 255 255 255; /* 卡片 */
+    --c-panel-hover: 248 250 253;
+    --c-edge: 226 232 240; /* 边框 slate-200 */
+    --c-edge-strong: 203 213 225; /* slate-300 */
+    --c-ink: 15 23 42; /* 主文本 slate-900 */
+    --c-ink-dim: 71 85 105; /* 次文本 slate-600 */
+    --c-ink-faint: 100 116 139; /* 弱文本 slate-500 */
+    --c-chip: 15 23 42; /* 中性填充基色(配合透明度) */
+    --c-accent-text: 27 127 212; /* 强调文本(激活态) */
+    --c-scroll: 203 213 225;
+    --c-scroll-hover: 148 163 184;
+
+    --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+    --shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.08);
+
+    /* Element Plus 亮色校准(与色板对齐) */
+    --el-color-primary: #2496ed;
+    --el-color-primary-dark-2: #1b7fd4;
+    --el-color-primary-light-3: #55adf1;
+    --el-color-primary-light-5: #82c3f5;
+    --el-color-primary-light-7: #aad8f9;
+    --el-color-primary-light-8: #c2e4fb;
+    --el-color-primary-light-9: #e3f1fd;
+
+    --el-color-success: #22c55e;
+    --el-color-success-dark-2: #1ba64e;
+    --el-color-success-light-3: #55d47f;
+    --el-color-success-light-5: #7fe0a1;
+    --el-color-success-light-7: #a9ecc2;
+    --el-color-success-light-8: #c0f1d2;
+    --el-color-success-light-9: #e7f8ee;
+
+    --el-bg-color: #ffffff;
+    --el-bg-color-overlay: #ffffff;
+    --el-bg-color-page: #f3f5f9;
+    --el-fill-color-blank: #ffffff;
+    --el-fill-color: #f1f5f9;
+    --el-fill-color-light: #f1f5f9;
+    --el-fill-color-lighter: #f5f8fb;
+    --el-fill-color-dark: #e8edf4;
+    --el-fill-color-darker: #dde5ef;
+
+    --el-border-color: #dbe3ee;
+    --el-border-color-light: #e2e8f0;
+    --el-border-color-lighter: #eaf0f6;
+    --el-border-color-extra-light: #f1f5f9;
+    --el-border-color-dark: #cbd5e1;
+    --el-border-color-darker: #94a3b8;
+
+    --el-text-color-primary: #0f172a;
+    --el-text-color-regular: #334155;
+    --el-text-color-secondary: #64748b;
+    --el-text-color-placeholder: #94a3b8;
+    --el-text-color-disabled: #a8b3c5;
+
+    --el-mask-color: rgba(243, 245, 249, 0.7);
+
+    --el-border-radius-base: 8px;
+    --el-border-radius-small: 6px;
+    --el-border-radius-round: 999px;
+    --el-font-size-base: 13px;
+  }
+
+  /* ---- 暗色主题令牌 ---- */
+  html.dark {
+    color-scheme: dark;
+
+    --c-abyss: 11 17 32; /* #0B1120 */
+    --c-side: 13 20 36; /* #0D1424 */
+    --c-panel: 17 26 46; /* #111A2E */
+    --c-panel-hover: 22 33 58; /* #16213A */
+    --c-edge: 31 42 68; /* #1F2A44 */
+    --c-edge-strong: 44 58 92; /* #2C3A5C */
+    --c-ink: 230 237 247; /* #E6EDF7 */
+    --c-ink-dim: 148 163 184; /* #94A3B8 */
+    --c-ink-faint: 100 116 139; /* #64748B */
+    --c-chip: 255 255 255;
+    --c-accent-text: 125 184 242; /* #7DB8F2 */
+    --c-scroll: 36 48 77;
+    --c-scroll-hover: 53 68 108;
+
+    --shadow-panel: 0 1px 2px rgba(2, 6, 17, 0.5), 0 12px 32px rgba(2, 6, 17, 0.45);
+    --shadow-hover: 0 0 0 1px rgba(36, 150, 237, 0.18), 0 6px 18px rgba(2, 6, 17, 0.4);
+
+    --el-bg-color: #111a2e;
+    --el-bg-color-overlay: #172036;
+    --el-bg-color-page: #0b1120;
+    --el-fill-color-blank: #111a2e;
+    --el-fill-color: #182238;
+    --el-fill-color-light: #182238;
+    --el-fill-color-lighter: #141d31;
+    --el-fill-color-dark: #1c2740;
+    --el-fill-color-darker: #223050;
+
+    --el-border-color: #24304d;
+    --el-border-color-light: #1f2a44;
+    --el-border-color-lighter: #1b2540;
+    --el-border-color-extra-light: #182238;
+    --el-border-color-dark: #2c3a5c;
+    --el-border-color-darker: #35446c;
+
+    --el-text-color-primary: #e6edf7;
+    --el-text-color-regular: #b6c2d9;
+    --el-text-color-secondary: #94a3b8;
+    --el-text-color-placeholder: #5b6b85;
+    --el-text-color-disabled: #46536b;
+
+    --el-mask-color: rgba(5, 8, 18, 0.72);
   }
 
   html,
@@ -14,17 +126,160 @@
   }
 
   body {
-    @apply m-0 bg-zinc-100 text-zinc-900 antialiased;
+    @apply m-0 bg-abyss text-ink antialiased;
     font-family: "Inter", "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* 主区域细滚动条 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-scroll));
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--c-scroll-hover));
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  .page-shell {
-    @apply space-y-6 pb-8;
+  .el-dialog {
+    border: 1px solid rgb(var(--c-edge));
+    border-radius: 14px;
   }
 
-  .status-stack {
-    @apply grid gap-2.5;
+  .el-button--primary {
+    --el-button-hover-bg-color: #4fa9f0;
+    --el-button-active-bg-color: #1b7fd4;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  /* ---- 应用壳层 ---- */
+  .app-shell {
+    @apply flex h-full;
+  }
+
+  .sidebar {
+    @apply flex w-56 shrink-0 flex-col border-r border-edge bg-side;
+  }
+
+  .brand-badge {
+    @apply flex h-10 w-10 items-center justify-center rounded-xl;
+    background: linear-gradient(135deg, #2496ed 0%, #0ea5e9 100%);
+    box-shadow: 0 4px 14px rgba(36, 150, 237, 0.35);
+  }
+
+  .nav-item {
+    @apply relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink-dim transition-colors duration-200;
+  }
+  .nav-item:hover {
+    @apply bg-chip/5 text-ink;
+  }
+  .nav-item.is-active {
+    @apply bg-brand-soft;
+    color: rgb(var(--c-accent-text));
+  }
+  .nav-item.is-active::before {
+    content: "";
+    @apply absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-brand;
+  }
+
+  .page-head {
+    @apply flex items-end justify-between gap-4 pb-5;
+  }
+  .page-title {
+    @apply m-0 text-xl font-semibold tracking-tight text-ink;
+  }
+  .page-desc {
+    @apply mt-1 text-[13px] leading-5 text-ink-dim;
+  }
+
+  .icon-btn {
+    @apply flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-edge bg-panel text-ink-dim transition-colors duration-200;
+  }
+  .icon-btn:hover {
+    @apply border-brand/50 text-brand;
+  }
+
+  /* ---- 卡片与表单 ---- */
+  .panel {
+    @apply rounded-2xl border border-edge bg-panel;
+    box-shadow: var(--shadow-panel);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  .panel-head {
+    @apply flex items-center gap-2.5 border-b border-edge px-5 py-3.5;
+  }
+  .panel-title {
+    @apply text-sm font-semibold text-ink;
+  }
+  .panel-icon {
+    @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand;
+  }
+
+  /* ---- 搜索结果卡片 ---- */
+  .result-card {
+    @apply flex cursor-default items-start gap-4 rounded-xl border border-edge bg-panel px-4 py-3.5 transition-all duration-200;
+  }
+  .result-card:hover {
+    @apply border-brand/40 bg-panel-hover;
+    box-shadow: var(--shadow-hover);
+  }
+
+  .result-name {
+    @apply font-mono text-[15px] font-semibold text-ink;
+  }
+
+  .meta-chip {
+    @apply inline-flex items-center gap-1 rounded-md bg-chip/5 px-1.5 py-0.5 text-[11px] leading-4 text-ink-dim;
+  }
+
+  .tag-official {
+    @apply inline-flex items-center gap-1 rounded-md bg-mint-soft px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-mint;
+  }
+
+  .hot-chip {
+    @apply cursor-pointer rounded-full border border-edge bg-chip/[0.03] px-2.5 py-0.5 text-[11px] leading-[18px] text-ink-dim transition-colors duration-150;
+  }
+  .hot-chip:hover {
+    @apply border-brand/50 bg-brand-soft;
+    color: rgb(var(--c-accent-text));
+  }
+
+  /* ---- 导出成功面板 ---- */
+  .success-panel {
+    @apply rounded-2xl border border-mint/30 bg-mint-soft p-5;
+  }
+
+  /* ---- 页面切换动效 ---- */
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .page-fade-enter-from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .page-fade-leave-to {
+    opacity: 0;
   }
 }

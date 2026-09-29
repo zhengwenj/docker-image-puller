@@ -835,8 +835,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "dockerhub-puller"
-version = "0.1.0"
+name = "docker-image-puller"
+version = "1.0.0"
 dependencies = [
  "flate2",
  "reqwest 0.12.28",

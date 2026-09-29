@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, reactive } from "vue";
 import { ElMessage } from "element-plus";
+import { Download, Search, Star } from "@element-plus/icons-vue";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { pullImageAsTar, searchImages } from "../composables/useRegistryApi";
 import type { SearchImageResult } from "../types/registry";
 import {
   appConfig,
   authConfigOrUndefined,
+  formatCount,
   formatTime,
   persistConfig,
   proxyConfigOrUndefined,
@@ -19,6 +21,7 @@ const pulling = ref(false);
 const error = ref("");
 const progressMessage = ref("");
 const results = ref<SearchImageResult[]>([]);
+const hasSearched = ref(false);
 const selectedItem = ref<SearchImageResult | null>(null);
 const pullDialogVisible = ref(false);
 const pullForm = reactive({
@@ -26,6 +29,8 @@ const pullForm = reactive({
   outputDir: "",
   tarFileName: "",
 });
+
+const hotWords = ["nginx", "redis", "postgres", "node", "mysql"];
 
 const directoryPicker = ref<HTMLInputElement | null>(null);
 
@@ -41,10 +46,12 @@ async function handleSearch() {
   const value = keyword.value.trim();
   if (!value) {
     results.value = [];
+    hasSearched.value = false;
     return;
   }
   error.value = "";
   searching.value = true;
+  hasSearched.value = true;
   try {
     results.value = await searchImages(value, proxyConfigOrUndefined(), 30);
   } catch (err) {
@@ -52,6 +59,11 @@ async function handleSearch() {
   } finally {
     searching.value = false;
   }
+}
+
+function quickSearch(word: string) {
+  keyword.value = word;
+  void handleSearch();
 }
 
 function openPullDialog(item: SearchImageResult) {
@@ -128,93 +140,104 @@ async function openExportDirectory() {
 </script>
 
 <template>
-  <section class="page-shell">
-    <el-row :gutter="16">
-      <el-col :xs="24" :lg="9">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="font-semibold">搜索镜像</div>
+  <section class="space-y-5 pb-8">
+    <!-- 搜索区 -->
+    <section class="panel p-5">
+      <div class="flex gap-3">
+        <el-input
+          v-model="keyword"
+          size="large"
+          placeholder="输入镜像关键字，如 nginx、redis、postgres"
+          clearable
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
           </template>
+        </el-input>
+        <el-button size="large" type="primary" class="px-7" :loading="searching" @click="handleSearch">
+          搜索
+        </el-button>
+      </div>
+      <div class="mt-3.5 flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+        <span>热门镜像</span>
+        <button v-for="word in hotWords" :key="word" type="button" class="hot-chip" @click="quickSearch(word)">
+          {{ word }}
+        </button>
+      </div>
+    </section>
 
-          <el-form label-position="top">
-            <el-form-item label="关键字">
-              <el-input
-                v-model="keyword"
-                placeholder="输入关键字，如 nginx, redis"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
+    <!-- 搜索结果 -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="m-0 text-sm font-semibold text-ink">搜索结果</h2>
+        <span v-if="results.length" class="text-xs text-ink-faint">共 {{ results.length }} 条</span>
+      </div>
 
-            <div class="text-xs leading-6 text-zinc-500">
-              搜索使用 Docker Hub 公共接口，代理与账号请在「设置」中配置。
+      <!-- 加载骨架 -->
+      <div v-if="searching" class="grid gap-2.5">
+        <div v-for="i in 4" :key="i" class="result-card opacity-70">
+          <el-skeleton animated style="flex: 1" :rows="2" />
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else-if="!results.length" class="panel flex flex-col items-center justify-center py-14">
+        <el-icon :size="40" class="text-ink-faint"><Search /></el-icon>
+        <p class="m-0 mt-3 text-sm text-ink-dim">{{ hasSearched ? "没有找到相关镜像，换个关键字试试" : "输入关键字开始搜索镜像" }}</p>
+      </div>
+
+      <!-- 结果卡片列表 -->
+      <div v-else class="grid gap-2.5">
+        <article v-for="row in results" :key="row.fullName" class="result-card">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="result-name">{{ row.fullName }}</span>
+              <span v-if="row.isOfficial" class="tag-official">OFFICIAL</span>
             </div>
-
-            <div class="mt-3 flex justify-end">
-              <el-button type="primary" :loading="searching" @click="handleSearch">搜索</el-button>
+            <p class="m-0 mt-1 line-clamp-2 text-[13px] leading-5 text-ink-dim">
+              {{ row.description || "无描述" }}
+            </p>
+            <div class="mt-2 flex items-center gap-1.5">
+              <span class="meta-chip"><el-icon :size="11"><Star /></el-icon>{{ formatCount(row.stars) }}</span>
+              <span class="meta-chip"><el-icon :size="11"><Download /></el-icon>{{ formatCount(row.pulls) }} pulls</span>
             </div>
-          </el-form>
-        </el-card>
-      </el-col>
+          </div>
+          <el-button type="primary" plain class="shrink-0" @click="openPullDialog(row)">导出 Tar</el-button>
+        </article>
+      </div>
+    </section>
 
-      <el-col :xs="24" :lg="15">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="flex items-center justify-between">
-              <span class="font-semibold">搜索结果</span>
-              <span class="text-xs text-zinc-500">共 {{ results.length }} 条</span>
-            </div>
-          </template>
-
-          <el-empty v-if="!results.length && !searching" description="还没有搜索结果" />
-
-          <el-table v-else :data="results" stripe max-height="480">
-            <el-table-column label="镜像名" min-width="200">
-              <template #default="{ row }">
-                <div class="font-medium">{{ row.fullName }}</div>
-                <div class="text-xs text-zinc-500">★ {{ row.stars }} · Pulls {{ row.pulls }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="描述" min-width="240">
-              <template #default="{ row }">
-                <div class="text-sm text-zinc-600">{{ row.description || "无描述" }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="110" fixed="right">
-              <template #default="{ row }">
-                <el-button type="primary" text @click="openPullDialog(row)">导出 Tar</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <div class="status-stack">
+    <!-- 状态区 -->
+    <div class="grid gap-2.5">
       <el-alert v-if="progressMessage" :title="progressMessage" type="info" :closable="false" show-icon />
       <el-alert v-if="error" :title="error" type="error" :closable="false" />
 
-      <el-card v-if="exportResult" shadow="never" class="border-blue-200 bg-blue-50/50">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="m-0 text-base font-bold text-zinc-900">导出成功</p>
-            <p class="m-0 mt-0.5 text-xs text-zinc-500">完成时间：{{ exportResult.finishedAt }}</p>
+      <div v-if="exportResult" class="success-panel">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3">
+            <el-icon :size="22" color="#22C55E"><Download /></el-icon>
+            <div>
+              <p class="m-0 text-[15px] font-bold text-ink">导出成功</p>
+              <p class="m-0 mt-0.5 text-xs text-ink-faint">完成时间：{{ exportResult.finishedAt }}</p>
+            </div>
           </div>
-          <el-button @click="openExportDirectory">打开目录</el-button>
+          <el-button type="primary" @click="openExportDirectory">打开目录</el-button>
         </div>
-        <div class="mt-2 grid gap-1">
-          <div>
-            <span class="mr-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">镜像</span>
-            <code>{{ exportResult.imageRef }}</code>
+        <div class="mt-3 grid gap-1.5 rounded-xl bg-abyss/50 px-3.5 py-3 text-xs leading-5">
+          <div class="flex gap-2">
+            <span class="w-10 shrink-0 text-ink-faint">镜像</span>
+            <code class="font-mono text-ink-dim">{{ exportResult.imageRef }}</code>
           </div>
-          <div>
-            <span class="mr-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">文件</span>
-            <code class="break-all">{{ exportResult.tarPath }}</code>
+          <div class="flex gap-2">
+            <span class="w-10 shrink-0 text-ink-faint">文件</span>
+            <code class="break-all font-mono text-ink-dim">{{ exportResult.tarPath }}</code>
           </div>
         </div>
-      </el-card>
+      </div>
     </div>
 
+    <!-- 导出对话框 -->
     <el-dialog v-model="pullDialogVisible" title="导出镜像 Tar" width="620px">
       <el-form label-position="top">
         <el-form-item label="镜像">

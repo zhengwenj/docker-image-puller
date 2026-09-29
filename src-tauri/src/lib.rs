@@ -16,9 +16,8 @@ use tauri::Manager;
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ProxyConfig {
-    http_proxy: Option<String>,
-    https_proxy: Option<String>,
-    no_proxy: Option<String>,
+    /// 代理地址,支持 http://、https://、socks5://、socks5h://
+    url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -92,9 +91,7 @@ struct PersistedConfig {
     default_tag: String,
     platform_os: String,
     platform_architecture: String,
-    http_proxy: String,
-    https_proxy: String,
-    no_proxy: String,
+    proxy: String,
     username: String,
     password: String,
 }
@@ -159,7 +156,7 @@ fn search_images_impl(request: SearchImagesRequest) -> Result<Vec<SearchImageRes
     }
 
     let limit = request.limit.unwrap_or(20).clamp(1, 100);
-    let client = build_http_client(request.proxy.as_ref(), "hub.docker.com")?;
+    let client = build_http_client(request.proxy.as_ref())?;
     let page_size = limit.to_string();
 
     let response = client
@@ -274,9 +271,7 @@ fn load_persisted_config_impl(app: tauri::AppHandle) -> Result<PersistedConfig, 
         "default_tag",
         "platform_os",
         "platform_architecture",
-        "http_proxy",
-        "https_proxy",
-        "no_proxy",
+        "proxy",
         "username",
         "password",
     ];
@@ -287,12 +282,23 @@ fn load_persisted_config_impl(app: tauri::AppHandle) -> Result<PersistedConfig, 
                 "default_tag" => config.default_tag = value,
                 "platform_os" => config.platform_os = value,
                 "platform_architecture" => config.platform_architecture = value,
-                "http_proxy" => config.http_proxy = value,
-                "https_proxy" => config.https_proxy = value,
-                "no_proxy" => config.no_proxy = value,
+                "proxy" => config.proxy = value,
                 "username" => config.username = value,
                 "password" => config.password = value,
                 _ => {}
+            }
+        }
+    }
+
+    // 兼容旧版本配置:代理从 http_proxy/https_proxy 迁移到统一的 proxy 字段
+    if config.proxy.is_empty() {
+        for legacy_key in ["https_proxy", "http_proxy"] {
+            if let Some(value) = load_config_value(&conn, legacy_key)? {
+                let value = value.trim();
+                if !value.is_empty() {
+                    config.proxy = value.to_string();
+                    break;
+                }
             }
         }
     }
@@ -319,12 +325,15 @@ fn save_persisted_config_impl(app: tauri::AppHandle, config: PersistedConfig) ->
         "platform_architecture",
         &config.platform_architecture,
     )?;
-    upsert_config_value(&tx, "http_proxy", &config.http_proxy)?;
-    upsert_config_value(&tx, "https_proxy", &config.https_proxy)?;
-    upsert_config_value(&tx, "no_proxy", &config.no_proxy)?;
+    upsert_config_value(&tx, "proxy", &config.proxy)?;
     upsert_config_value(&tx, "username", &config.username)?;
     upsert_config_value(&tx, "password", &config.password)?;
 
+    // 清理旧版本遗留的代理配置键
+    for legacy_key in ["http_proxy", "https_proxy", "no_proxy"] {
+        tx.execute("DELETE FROM app_config WHERE key = ?1", params![legacy_key])
+            .map_err(format_sqlite_err)?;
+    }
     tx.commit().map_err(format_sqlite_err)?;
     Ok(())
 }
@@ -366,7 +375,7 @@ fn pull_image_as_tar_impl(request: PullImageRequest) -> Result<PullImageResult, 
         .unwrap_or_else(|| format!("{}-{}.tar", sanitize_file_name(&repo), tag));
     let tar_path = output_dir.join(tar_file_name);
 
-    let client = build_http_client(request.proxy.as_ref(), &api_registry)?;
+    let client = build_http_client(request.proxy.as_ref())?;
     let auth = request.auth.unwrap_or(RegistryAuth {
         username: None,
         password: None,
@@ -456,7 +465,6 @@ fn pull_image_as_tar_impl(request: PullImageRequest) -> Result<PullImageResult, 
 
     download_layers_in_parallel(
         request.proxy.as_ref(),
-        &api_registry,
         &base,
         &repo,
         &auth,
@@ -607,7 +615,7 @@ async fn test_registry_auth(
 fn test_registry_auth_impl(request: TestRegistryAuthRequest) -> Result<TestRegistryAuthResult, String> {
     let registry = normalize_registry(request.registry.as_deref());
     let api_registry = to_api_registry(&registry);
-    let client = build_http_client(request.proxy.as_ref(), &api_registry)?;
+    let client = build_http_client(request.proxy.as_ref())?;
     let auth = request.auth.unwrap_or(RegistryAuth {
         username: None,
         password: None,
@@ -682,21 +690,16 @@ fn test_registry_auth_impl(request: TestRegistryAuthRequest) -> Result<TestRegis
     })
 }
 
-fn build_http_client(proxy: Option<&ProxyConfig>, target_host: &str) -> Result<Client, String> {
+fn build_http_client(proxy: Option<&ProxyConfig>) -> Result<Client, String> {
     let mut builder = ClientBuilder::new().user_agent(concat!(
         env!("CARGO_PKG_NAME"),
         "/",
         env!("CARGO_PKG_VERSION")
     ));
     if let Some(cfg) = proxy {
-        let bypass = should_bypass_proxy(target_host, cfg.no_proxy.as_deref());
-        if !bypass {
-            if let Some(http_proxy) = clean_opt(cfg.http_proxy.as_deref()) {
-                builder = builder.proxy(Proxy::http(http_proxy).map_err(format_reqwest_err)?);
-            }
-            if let Some(https_proxy) = clean_opt(cfg.https_proxy.as_deref()) {
-                builder = builder.proxy(Proxy::https(https_proxy).map_err(format_reqwest_err)?);
-            }
+        if let Some(url) = clean_opt(cfg.url.as_deref()) {
+            // Proxy::all 会按 URL scheme 自动选择 http/https/socks 代理方式
+            builder = builder.proxy(Proxy::all(url).map_err(format_reqwest_err)?);
         }
     }
     builder.build().map_err(format_reqwest_err)
@@ -869,7 +872,6 @@ fn download_blob_to_file(
 
 fn download_layers_in_parallel(
     proxy: Option<&ProxyConfig>,
-    api_registry: &str,
     base: &str,
     repo: &str,
     auth: &RegistryAuth,
@@ -879,7 +881,7 @@ fn download_layers_in_parallel(
         return Ok(());
     }
 
-    let client = build_http_client(proxy, api_registry)?;
+    let client = build_http_client(proxy)?;
     let max_parallel = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4)
@@ -1009,7 +1011,7 @@ fn ensure_success(response: Response) -> Result<Response, String> {
         let hint = if status == reqwest::StatusCode::NOT_FOUND {
             "（常见原因：仓库路径不完整、tag 不存在，或走了错误代理）"
         } else if status == reqwest::StatusCode::SERVICE_UNAVAILABLE {
-            "（常见原因：代理链路不可用，建议将仓库域名加入 NO_PROXY）"
+            "（常见原因：代理链路不可用，可尝试在设置中更换或清空代理）"
         } else {
             ""
         };
@@ -1091,9 +1093,7 @@ fn default_persisted_config() -> PersistedConfig {
         default_tag: "latest".to_string(),
         platform_os: "linux".to_string(),
         platform_architecture: "amd64".to_string(),
-        http_proxy: String::new(),
-        https_proxy: String::new(),
-        no_proxy: String::new(),
+        proxy: String::new(),
         username: String::new(),
         password: String::new(),
     }
@@ -1314,28 +1314,6 @@ fn build_empty_container_config() -> Value {
 
 fn sanitize_file_name(input: &str) -> String {
     input.replace('/', "_").replace(':', "_")
-}
-
-fn should_bypass_proxy(target_host: &str, no_proxy: Option<&str>) -> bool {
-    let Some(no_proxy) = clean_opt(no_proxy) else {
-        return false;
-    };
-    no_proxy.split(',').any(|rule| {
-        let item = rule.trim();
-        if item.is_empty() {
-            return false;
-        }
-        if item == "*" {
-            return true;
-        }
-        if target_host == item {
-            return true;
-        }
-        if let Some(stripped) = item.strip_prefix('.') {
-            return target_host.ends_with(stripped);
-        }
-        target_host.ends_with(&format!(".{item}"))
-    })
 }
 
 fn clean_opt(value: Option<&str>) -> Option<&str> {
