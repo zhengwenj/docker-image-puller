@@ -5,8 +5,9 @@ main:
   web_trigger_sync_github_release:
     - stages:
         - name: 下载 GitHub Release 产物
-          image: curlimages/curl:latest
+          image: alpine:3.20
           script:
+            - apk add --no-cache curl
             - mkdir -p assets
             - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.msi" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.msi"
             - curl -fL --retry 3 -o "assets/docker-image-puller-${VERSION}-x64-setup.exe" "https://github.com/zhengwenj/docker-image-puller/releases/download/v${VERSION}/docker-image-puller-${VERSION}-x64-setup.exe"
