@@ -1,0 +1,20 @@
+# frontend
+node_modules/
+dist/
+
+# tauri / rust
+src-tauri/target/
+src-tauri/gen/
+
+# logs
+*.log
+
+# editor / ide
+.idea/
+.vscode/
+.playwright-mcp/
+.codefree/
+
+# os
+.DS_Store
+Thumbs.db

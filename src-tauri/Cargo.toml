@@ -1,0 +1,28 @@
+[package]
+name = "dockerhub-puller"
+version = "0.1.0"
+description = "Pull Docker Hub / OCI registry images and export them as docker-loadable tar archives"
+authors = ["zhengwenj"]
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# if the lib name is unique it doesn't conflict with the bin name.
+name = "dockerhub_puller_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+flate2 = "1"
+tar = "0.4"
+rusqlite = { version = "0.32", features = ["bundled"] }
+sha2 = "0.10"
